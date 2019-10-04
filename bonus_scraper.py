@@ -4,44 +4,50 @@ import urllib.request
 from bs4 import BeautifulSoup
 from selenium import webdriver
 import time
+import datetime
 import smtplib
-from email import message
 from pyvirtualdisplay import Display
-from datetime import date
-import sys
+import conf
 
 
-def sendMail(inSale):
+def getWantedProducts():
+    with open("wanted.txt", "r+", encoding="utf-8") as file:
+        wantedProducts = file.read().splitlines()
+        return wantedProducts
 
-    # Get mail credentials
-    with open("creds.txt", "r+") as file:
-        creds = file.read().splitlines()
-        # creds[0] = from_addr
-        # creds[1] = to_addr
-        # creds[2] = smtp server
-        # creds[3] = smtp pw
+def sendMail(subject, content):
 
-    if (inSale):
-        if (inSale[0] == 'error'):
-            # When the scraper finds no products at all, send me a warning.
-            subject = 'Bonuswatcher AH - error'
-            body = inSale[1]
-        else:
-            subject = 'Bonuswatcher AH'
-            body = 'Deze week in de bonus: \n\n- ' + '\n- '.join(inSale)
+    headers = {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Content-Disposition': 'inline',
+        'Content-Transfer-Encoding': '8bit',
+        'From': conf.sender,
+        'To': conf.to,
+        'Date': datetime.datetime.now().strftime('%a, %d %b %Y  %H:%M:%S %Z'),
+        'Subject': subject
+    }
+
+    # Create the message.
+    msg = ''
+    for key, value in headers.items():
+        msg += "%s: %s\n" % (key, value)
+
+    if ('warning' in subject):
+        msg += "\n%s\n"  % (content)
+    elif not content:
+        msg += 'Helaas pindakaas, geen door jouw geselecteerde producten zijn in de aanbieding deze week.'
     else:
-        subject = 'Geen aanbiedingen deze week'
-        body = 'Helaas pindakaas, geen door jouw geselecteerde producten zijn in de aanbieding deze week.'
+        msg += 'Deze week in de bonus: \n\n- ' + '\n- '.join(content)
 
-    msg = message.Message()
-    msg.add_header('from', creds[0])
-    msg.add_header('to', creds[1])
-    msg.add_header('subject', subject)
-    msg.set_payload(body)
-
-    server = smtplib.SMTP(creds[2], 587)
-    server.login(creds[0], creds[3])
-    server.send_message(msg, from_addr=creds[0], to_addrs=creds[1])
+    # Send email.
+    s = smtplib.SMTP(conf.host, conf.port)
+    s.ehlo()
+    s.starttls()
+    s.ehlo()
+    s.login(conf.username, conf.password)
+    print ("sending %s to %s" % (subject, headers['To']))
+    s.sendmail(headers['From'], headers['To'], msg.encode("utf8"))
+    s.quit()
 
 
 def scrapeWebsite(url):
@@ -57,20 +63,20 @@ def scrapeWebsite(url):
     display.stop()
 
     if not products:
-        products = ['error', 'It seems like Albert Heijn changed their CSS classes..again..']
+        sendMail('Bonusscraper warning', 'It seems like Albert Heijn changed their CSS classes..again..')
+        sys.exit()
 
     return products
 
 
 def main():
     url = 'https://ah.nl/bonus'
-    wantedProducts = ["Lavazza Espresso bonen", "Jordans", "Olijfolie", "AH Zacht toiletpapier 4-lagen voordeel", "Robijn", "Falafel", "toiletpapier", "dreft", "lavazza"]
-    products = scrapeWebsite(url)
+    subject = 'AH - bonusscraper'
+    wantedProducts = getWantedProducts()
+    allProducts = scrapeWebsite(url)
+    matchedProducts = [product for product in allProducts if any(wantedProduct.lower() in product.lower() for wantedProduct in wantedProducts)]
 
-    if (products[0] != 'error'):
-        products = [product for product in products if any(wantedProduct.lower() in product.lower() for wantedProduct in wantedProducts)]
-
-    sendMail(products)
+    sendMail(subject, matchedProducts)
 
 
 main()
