@@ -9,7 +9,7 @@
 # x leave server idle after succesful connection
 # x log connections
 # - send reply back to github server
-# - don't crash when git pull throws an error (or just use git stash first)
+# x don't crash when git pull throws an error (or just use git stash first)
 # - validate whether post request is actually from Github
 # - more security measures?
 
