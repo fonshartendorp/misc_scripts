@@ -35,7 +35,7 @@ def deploy(repo):
     dir = directories[repo]
     command = ['git stash clear && git pull']
     # subprocess.check_call when in production.
-    output = subprocess.check_output(command, cwd=dir)
+    output = subprocess.check_output('git stash; git pull', cwd=dir, shell=True)
 
     # output = subprocess.check_output(['git', 'stash', 'clear', '&&', 'git', 'pull'], cwd=dir)
 
