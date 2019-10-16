@@ -33,8 +33,11 @@ def deploy(repo):
     Git pull from the right directory in a subprocess.
     """
     dir = directories[repo]
+    command = ['git stash clear && git pull']
     # subprocess.check_call when in production.
-    output = subprocess.check_output(['git', 'stash', 'clear', '&&', 'git', 'pull'], cwd=dir)
+    output = subprocess.check_output(command, cwd=dir)
+
+    # output = subprocess.check_output(['git', 'stash', 'clear', '&&', 'git', 'pull'], cwd=dir)
 
 def server():
     """
