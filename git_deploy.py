@@ -34,7 +34,7 @@ def deploy(repo):
     """
     dir = directories[repo]
     # subprocess.check_call when in production.
-    output = subprocess.check_output(['git', 'pull'], cwd=dir)
+    output = subprocess.check_output(['git', 'stash', '&&', 'git', 'pull'], cwd=dir)
 
 def server():
     """
