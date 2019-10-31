@@ -8,15 +8,22 @@ import datetime
 import smtplib
 from pyvirtualdisplay import Display
 import conf
-
+import logging
 
 def getWantedProducts():
-    with open("wanted.txt", "r+", encoding="utf-8") as file:
+    """
+    Get products that I want to receive a notification for if they're in discount.
+    """
+    with open("/home/pi/misc_scripts/wanted.txt", "r+", encoding="utf-8") as file:
         wantedProducts = file.read().splitlines()
         return wantedProducts
 
 def sendMail(subject, content):
+    """
+    Sends email with products or a warning if some error occured.
+    """
 
+    # Email headers.
     headers = {
         'Content-Type': 'text/html; charset=utf-8',
         'Content-Disposition': 'inline',
@@ -27,30 +34,34 @@ def sendMail(subject, content):
         'Subject': subject
     }
 
-    # Create the message.
+    # Create message.
     msg = ''
     for key, value in headers.items():
         msg += "%s: %s\n" % (key, value)
+
 
     if ('warning' in subject):
         msg += "\n%s\n"  % (content)
     elif not content:
         msg += 'Helaas pindakaas, geen door jouw geselecteerde producten zijn in de aanbieding deze week.'
     else:
-        msg += 'Deze week in de bonus: \n\n- ' + '\n- '.join(content)
+        msg += 'Deze week in de bonus: \r\n- ' + '\r\n- '.join(content)
 
-    # Send email.
+    # Send it.
     s = smtplib.SMTP(conf.host, conf.port)
     s.ehlo()
     s.starttls()
     s.ehlo()
     s.login(conf.username, conf.password)
-    print ("sending %s to %s" % (subject, headers['To']))
+    logging.info("sending %s to %s" % (subject, headers['To']))
     s.sendmail(headers['From'], headers['To'], msg.encode("utf8"))
     s.quit()
 
 
 def scrapeWebsite(url):
+    """
+    Use pyvirtualdisplay and selenium to scrape all products of their discount page.
+    """
     display = Display(visible=0, size=(800, 800))
     display.start()
     browser = webdriver.Chrome()
@@ -70,10 +81,15 @@ def scrapeWebsite(url):
 
 
 def main():
+    logging.basicConfig(filename='logs/bonus_scraper.log',
+                        level=logging.INFO,
+                        format='%(asctime)s :: %(levelname)s :: %(message)s')
     url = 'https://ah.nl/bonus'
     subject = 'AH - bonusscraper'
     wantedProducts = getWantedProducts()
     allProducts = scrapeWebsite(url)
+
+    # Match products.
     matchedProducts = [product for product in allProducts if any(wantedProduct.lower() in product.lower() for wantedProduct in wantedProducts)]
 
     sendMail(subject, matchedProducts)
