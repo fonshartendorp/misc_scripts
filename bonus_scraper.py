@@ -39,7 +39,6 @@ def sendMail(subject, content):
     for key, value in headers.items():
         msg += "%s: %s\n" % (key, value)
 
-
     if ('warning' in subject):
         msg += "\n%s\n"  % (content)
     elif not content:
@@ -73,6 +72,7 @@ def scrapeWebsite(url):
     browser.quit()
     display.stop()
 
+    # Send warning when no products are scraped at all.
     if not products:
         sendMail('Bonusscraper warning', 'It seems like Albert Heijn changed their CSS classes..again..')
         sys.exit()
