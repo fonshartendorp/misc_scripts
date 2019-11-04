@@ -89,10 +89,11 @@ def main():
     wantedProducts = getWantedProducts()
     allProducts = scrapeWebsite(url)
 
-    # Match products.
+    # Match products in one almighty one liner
     matchedProducts = [product for product in allProducts if any(wantedProduct.lower() in product.lower() for wantedProduct in wantedProducts)]
 
     sendMail(subject, matchedProducts)
 
 
-main()
+if __name__== "__main__":
+    main()
