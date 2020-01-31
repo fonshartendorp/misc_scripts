@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+#
+#  TODO:
+# -
 
 import urllib.request
 from bs4 import BeautifulSoup
@@ -14,7 +17,7 @@ def getWantedProducts():
     """
     Get products that I want to receive a notification for if they're in discount.
     """
-    with open("/home/pi/misc_scripts/wanted.txt", "r+", encoding="utf-8") as file:
+    with open("wanted.txt", "r+", encoding="utf-8") as file:
         wantedProducts = file.read().splitlines()
         return wantedProducts
 
@@ -67,8 +70,8 @@ def scrapeWebsite(url):
     browser.get(url)
     browser.execute_script("window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return lenOfPage;")
     time.sleep(3)
-    product_elements = browser.find_elements_by_xpath("//*[contains(@class, 'title_lineclamp__23pTR')]")
-    products = [product.text for product in product_elements]
+    product_elements = browser.find_elements_by_css_selector('span.title_lineclamp__23pTR')
+    products = [product.get_attribute('innerHTML') for product in product_elements]
     browser.quit()
     display.stop()
 
